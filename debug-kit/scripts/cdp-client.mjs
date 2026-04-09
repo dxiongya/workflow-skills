@@ -29,9 +29,22 @@ import { URL } from 'node:url';
 import { execSync, spawn } from 'node:child_process';
 import path from 'node:path';
 
-const PORT = process.env.CDP_PORT || 9222;
+import net from 'node:net';
+
+let PORT = process.env.CDP_PORT || 9222;
 const HOST = process.env.CDP_HOST || 'localhost';
 const STATE_FILE = '/tmp/.electron-debug-state.json';
+
+// Find a free port starting from `start`
+function findFreePort(start = 9222) {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.listen(start, '127.0.0.1', () => {
+      server.close(() => resolve(start));
+    });
+    server.on('error', () => resolve(findFreePort(start + 1)));
+  });
+}
 
 // --- State management ---
 function saveState(state) {
@@ -523,15 +536,22 @@ async function cmdLaunch(mode = 'dev') {
   }
 
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-  const port = parseInt(PORT);
 
-  // Check if port is already in use
-  try {
-    await httpGet('/json/version');
-    console.log(`Port ${port} already has an Electron app running. Use 'stop' first or set CDP_PORT.`);
-    return;
-  } catch {
-    // Port is free, good
+  // Auto-find free port if CDP_PORT not explicitly set
+  let port;
+  if (process.env.CDP_PORT) {
+    port = parseInt(PORT);
+    // Check if explicitly set port is already in use
+    try {
+      await httpGet('/json/version');
+      console.log(`Port ${port} already has an Electron app running. Use 'stop' first or set a different CDP_PORT.`);
+      return;
+    } catch {
+      // Port is free, good
+    }
+  } else {
+    port = await findFreePort(9222);
+    PORT = port; // Update global for subsequent commands in this session
   }
 
   // Detect project type and build launch command

@@ -3,9 +3,26 @@
 # Reuses the CDP client from electron-debug, connects to Chrome/Edge
 set -euo pipefail
 
-PORT="${CDP_PORT:-9333}"
-CDP_SCRIPT="/Users/daxiongya/.claude/skills/debug-kit/scripts/cdp-client.mjs"
+CDP_SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/cdp-client.mjs"
 STATE_FILE="/tmp/.web-debug-state.json"
+
+# Find a free port starting from $1
+find_free_port() {
+    local port="${1:-9333}"
+    while lsof -i ":$port" &>/dev/null; do
+        port=$((port + 1))
+    done
+    echo "$port"
+}
+
+# Determine port: explicit CDP_PORT > saved state > auto-find free
+if [[ -n "${CDP_PORT:-}" ]]; then
+    PORT="$CDP_PORT"
+elif [[ -f "$STATE_FILE" ]]; then
+    PORT=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$STATE_FILE','utf8')).port||9333)" 2>/dev/null)
+else
+    PORT=9333
+fi
 GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'; NC='\033[0m'
 ok()   { echo -e "${GREEN}[OK]${NC} $*"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
@@ -39,7 +56,7 @@ cmd_launch() {
         return 1
     fi
 
-    # Check if port is already in use
+    # Check if current port already has a debug session
     if curl -s "http://localhost:$PORT/json/version" >/dev/null 2>&1; then
         ok "Debug port $PORT already active"
         if [[ -n "$url" ]]; then
@@ -49,6 +66,8 @@ cmd_launch() {
         return 0
     fi
 
+    # Auto-find free port for new launch
+    PORT=$(find_free_port "$PORT")
     echo "Launching $browser with debug port $PORT..."
 
     # Create a temp user data dir to avoid conflicts with existing Chrome sessions
