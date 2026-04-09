@@ -65,15 +65,27 @@ PLAN ──①──> TODO ──②──> DEVING ──③──> DEV DONE ─
 | 任意→BLOCK | 阻塞 | 说明阻塞原因和依赖 |
 | BLOCK→原状态 | 解除阻塞 | 阻塞原因已解决 |
 
+## 建议池（Proposal Backlog）
+
+任何团队成员在任何环节都可以提出建议——不限于 bug，也包括新功能想法、体验优化、技术改进。
+
+详见 `references/proposals.md`
+
+- **谁可以提**：所有角色（Dev、QA、Design、PM）
+- **什么时候提**：执行任务过程中随时发现随时记录
+- **去向**：进入建议池，下一个迭代拆卡时由 PM+Design 评审
+- **决定权**：PM+Design 有权采纳或拒绝，必须符合产品方向
+
 ## 阶段流程
 
 每个开发阶段循环：
 
 1. **设计规范** → `references/design.md` — 建立 DESIGN.md，Pencil MCP 出设计稿
-2. **拆卡** → `references/plan.md` — PM+Design+Dev 拆分任务卡
+2. **拆卡** → `references/plan.md` — PM+Design+Dev 拆分任务卡（同时评审上一阶段的建议池）
 3. **开卡→执行→结卡** → `references/dev.md` — 每张卡片的开发生命周期
 4. **QA 验收** → `references/qa.md` — 功能/UI/交互/安全测试
 5. **集成测试** → `references/integration.md` — 阶段全面回归
+6. **建议评审** → `references/proposals.md` — 评审本阶段收集的建议，决定是否纳入下一迭代
 
 ## 与 debug-kit 集成
 
