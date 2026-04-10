@@ -144,7 +144,8 @@ workflow-skills/
 │       ├── flutter-ctl.sh          Flutter CLI wrapper
 │       ├── rn-ctl.sh               React Native + Expo wrapper
 │       ├── android-ctl.sh          Android adb wrapper
-│       └── tauri-ctl.sh            Tauri CLI + mac-ctl.sh delegate
+│       ├── tauri-ctl.sh            Tauri CLI + mac-ctl.sh delegate
+│       └── find-window-id.swift    Swift helper — resolves CGWindowID for screencapture -l
 │
 └── team-flow/
     ├── SKILL.md                    Roles, state machine, stage overview
@@ -163,12 +164,30 @@ workflow-skills/
 
 ## Requirements
 
-- **macOS** (for iOS Simulator, Accessibility API, CGEvent)
-- **Node.js** (for CDP client, Metro bundler)
-- **Xcode** (for iOS/macOS builds)
-- **Chrome** (for Web debugging)
-- **Flutter SDK** (for Flutter projects)
-- **Android SDK** (for Android projects, optional)
+Base:
+
+- **macOS** host (iOS Simulator, Accessibility API, CGEvent, Swift runtime)
+- **Node.js** (CDP client, Metro bundler)
+- **Xcode Command Line Tools** (iOS/macOS builds, `swift` CLI used by `find-window-id.swift`)
+- **jq** (`brew install jq`) — JSON parsing in `tauri-ctl.sh`
+
+Per-platform (only install what you target):
+
+- **Chrome** — Web / Electron debugging
+- **Flutter SDK** — Flutter projects
+- **Android SDK** — Android projects
+- **Rust toolchain** (`cargo`/`rustc`) — Tauri projects
+
+### macOS permissions
+
+Only needed for platforms that drive **native macOS windows** via `mac-ctl.sh`: `macos`, `tauri`, `flutter` (macOS target). All other platforms read pixels through their own protocols (CDP / simctl / adb) and don't need these.
+
+| Permission | For | Where |
+|---|---|---|
+| **Accessibility** | `tree`, `read`, `tap`, `type`, `key`, `menu` | System Settings → Privacy & Security → Accessibility |
+| **Screen Recording** | `screenshot` | System Settings → Privacy & Security → Screen Recording |
+
+Grant to the terminal that hosts Claude Code (Terminal / iTerm2), then **fully quit and relaunch** it — macOS does not apply permission changes to already-running processes. See `debug-kit/references/macos.md` §Permissions for the silent-wallpaper-redaction gotcha.
 
 ## License
 
