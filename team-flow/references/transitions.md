@@ -13,6 +13,96 @@
 
 ---
 
+## 卡片分类（决定验证方式）
+
+每张卡在拆卡阶段必须标注分类，③ 和 ④ 关卡按分类使用不同的证据形式。
+
+| 分类 | 定义 | ③ 自测证据要求 |
+|------|------|---------------|
+| **visual** | 改变用户看到的像素（UI、布局、文字、颜色） | **必须** debug-kit screenshot 对比 + 结构验证 |
+| **behavioral** | 改变运行时行为（数据流、事件、API 调用） | debug-kit 交互日志 + console/log 检查 |
+| **structural** | 只改基础设施、类型、配置、未被引用的新文件 | **允许豁免 screenshot**，用 grep / import graph / compile 输出代替 |
+
+### 零影响卡（structural 特例）
+
+如果卡片满足以下全部条件，视为"零影响"，`UI 视觉无变化`类验收标准可用结构性证据代替截图：
+
+- 新增的代码/文件**尚无任何组件引用**（grep 证实引用数为 0）
+- 未修改任何已被引用的符号/文件
+- 未改动 build 配置或运行时入口
+
+证据格式示例：
+```
+验收标准: "UI 视觉无任何变化"
+  → 通过 ✓ 结构性证据:
+     grep:className.*<new-class>@src/components/ → 0 文件
+     grep:import.*<new-module>@src/              → 0 文件
+     diff:index.css → 无修改
+```
+
+---
+
+## 证据语法
+
+所有 checkpoint 的验证结果**必须**用下列语法之一表达，便于扫读与复核：
+
+| 语法 | 用途 | 示例 |
+|------|------|------|
+| `file:<path>` | 文件存在性 | `file:design/tokens.css` |
+| `grep:<pattern>@<path>` | 代码搜索 | `grep:var\(--cb-@src/components → 0 匹配` |
+| `compile:<cmd>` | 编译 / 类型检查 | `compile:pnpm tauri dev → Finished dev profile` |
+| `screenshot:<path>` | 视觉对比 | `screenshot:/tmp/after.png`（附说明） |
+| `log:<path>:<line>` | 运行时日志 | `log:/tmp/dev.out:142 → WebSocket listening` |
+| `test:<cmd>` | 测试运行结果 | `test:pnpm test → 42 passed` |
+| `diff:<path>` | 文件差异 | `diff:index.css → 无修改` |
+
+混合使用时，一行一条。模糊描述如"已验证"、"OK"、"差不多了"**不接受**。
+
+### 转移报告里的证据块示例
+
+```
+验收标准 1: "design/components.css 存在，13 语义类齐全，零硬编码"
+  → 通过 ✓
+  → file:design/components.css
+  → grep:^\.[a-z-]+ @design/components.css → 45 条 rule headers
+  → grep:#[0-9a-fA-F]{3,8}@design/components.css → 0 匹配
+
+验收标准 2: "pnpm tauri dev 编译成功"
+  → 通过 ✓
+  → compile:pnpm tauri dev → Finished dev profile, binary running
+  → log:/tmp/byd6mz9x4.output:tail → 无 error
+```
+
+---
+
+## 批量转移规则
+
+**初始拆卡场景下的 PLAN → TODO 允许批量**：当一批卡片在同一次拆卡会议中同时就绪时，可以对"整批"做一次关卡检查，在一份报告里列明"本批 N 张卡全部满足条件"，而不必逐卡重复。
+
+其它转移（TODO→DEVING、DEVING→DEV DONE、DEV DONE→QA 等）**仍必须逐卡单独进行**，因为每张卡的上下文、进度、证据都不同。
+
+批量转移的报告模板：
+
+```
+## 批量状态转移: <阶段名> PLAN → TODO（N 张卡）
+
+### 关卡检查（对整批生效）
+- [x] 所有卡片标题清晰
+- [x] 所有卡片验收标准可验证（抽查：CARD-01 / CARD-05 / CARD-08）
+- [x] 所有卡片设计引用齐全（抽查同上）
+- [x] 依赖图无环
+- [x] 三方无异议
+
+### 批次清单
+| ID | 标题 | 分类 | 优先级 |
+| … | … | … | … |
+
+### 确认
+是否批准本批 N 张卡从 PLAN 转为 TODO？
+```
+
+---
+
 ## ① PLAN → TODO（拆卡完成）
 
 ### 关卡：卡片就绪检查
@@ -192,6 +282,47 @@ QA 签收
 ### 谁触发
 任何角色都可以标记 BLOCK
 
+### 典型场景示例
+
+**场景 A — 依赖其他未完成的卡**
+```
+卡片: REFACTOR-05 (Editor 重写)
+当前状态: DEVING
+触发原因: 需要 REFACTOR-03 (Shell 重写) 定义的 `.tab` 语义类，
+         但 REFACTOR-03 还在 DEVING，尚未提交 components.css 里的 .tab 定义。
+依赖解除条件: REFACTOR-03 推进到 DEV DONE 或更高状态
+已通知: Dev Lead（由他决定是否并行推进或等待）
+```
+
+**场景 B — 等待外部资源**
+```
+卡片: FEAT-12 (接入支付回调)
+当前状态: TODO
+触发原因: 支付网关 Webhook 文档 v2 尚未发布，当前 v1 文档里回调字段定义与实际不符
+依赖解除条件: 收到供应商的 v2 文档 或 拿到沙箱环境的真实回调样本
+已通知: PM（由 PM 去跟供应商催）
+```
+
+**场景 C — 需求澄清**
+```
+卡片: BUG-031 (会话列表排序错乱)
+当前状态: DEVING
+触发原因: 发现两种合理排序（按 updated_at / 按 last_message_at），
+         需求文档没说，两种实现对用户体验影响不同
+依赖解除条件: PM 给出明确决策
+已通知: PM（已在卡片评论区 at）
+```
+
+**场景 D — 技术方案重估**
+```
+卡片: FEAT-08 (实时协作光标)
+当前状态: DEVING
+触发原因: 自测发现当前方案（HTTP polling）延迟 > 2s，不满足"近实时"验收标准。
+         需要 Dev Lead 决定是否改用 WebSocket
+依赖解除条件: 技术方案重新评估后的决定
+已通知: Dev Lead
+```
+
 ---
 
 ## BLOCK → 原状态（解除阻塞）
@@ -201,7 +332,14 @@ QA 签收
 ```
 [ ] 阻塞原因是否已解决？（附证据）
 [ ] 解决方案是否影响了卡片的需求或验收标准？（如有变更需更新卡片）
+[ ] 卡片回到哪个状态？（原状态或更早状态）
 ```
+
+### 回退规则
+
+- **默认回原状态**：解除后回到 BLOCK 前的状态（如原本 DEVING → BLOCK，解除后回到 DEVING）
+- **如果解决方案改变了需求/验收标准**：必须把卡片**回退到 TODO**，重新开卡确认上下文
+- **如果是技术方案重大调整**：Dev Lead 评估后可能需要重新拆卡，原卡作废
 
 ---
 

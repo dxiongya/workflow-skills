@@ -57,6 +57,54 @@ PM + Design + 本卡执行开发
 [ ] 边界情况处理（空数据、异常输入等）
 ```
 
+> 自测证据必须使用 `references/transitions.md §证据语法` 的格式，不接受模糊描述。
+
+---
+
+## Card ↔ Commit 映射约定
+
+一张卡 = 一个或多个 atomic commit，commit 与卡片必须有明确的追溯关系。
+
+### 规则
+
+1. **Commit message 首行必须引用卡片 ID**，格式：
+   ```
+   <type>(<CARD-ID>): <短描述>
+   ```
+   例子：
+   ```
+   feat(REFACTOR-01): design/ config layer + semantic classes
+   fix(BUG-023): resolve race condition in session switch
+   chore(CHORE-05): bump dependencies
+   ```
+
+2. **DEV DONE 前必须 commit**。DEVING → DEV DONE 转移的前置条件是"所有改动已提交到本地分支"，否则结卡无 diff 可查。
+
+3. **Atomic**：一个 commit 只做一件事。如果一张卡需要多步（如先加 token、再改组件），应拆成多个 commit，但每个 commit message 都引用同一个 `CARD-ID`。
+
+4. **卡片范围外的改动禁止塞进同一 commit**。如果自测时顺手修了无关的 typo，新建一张 `CHORE-XX` 卡或单独 commit，message 不引用本卡 ID。
+
+5. **Body 引用卡片路径**（可选但推荐）：
+   ```
+   feat(REFACTOR-01): design/ config layer + semantic classes
+
+   Moves tokens into design/ as canonical source. Creates components.css
+   with 13 semantic classes. No components reference the new classes yet.
+
+   Card: tasks/REFACTOR-01.md
+   ```
+
+### 结卡时的 commit 审查（④ 关卡的一部分）
+
+- PM/Design/Dev 结卡时，用 `git log --oneline <base>..HEAD -- tasks/ src/` 快速确认本卡所有 commit
+- 如果发现 commit message 没引用卡片 ID，**结卡不通过**，要求 Dev 用 `git commit --amend` 或交互式 rebase 修正
+
+### 分支策略（建议，非强制）
+
+- 单张 P0 大卡：建议 `<card-id>` 独立分支（如 `refactor-01`），完成后 merge
+- 同一阶段的连续小卡：可在同一阶段分支上顺序推进
+- Bug 卡：紧急 hotfix 另开分支，非紧急在当前阶段分支内
+
 ---
 
 ## 三、结卡
