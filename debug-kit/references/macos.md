@@ -110,10 +110,26 @@ Uses JXA (JavaScript for Automation) to traverse the Accessibility tree via `Sys
 
 | Feature | Permission | How to Grant |
 |---------|-----------|--------------|
-| `tree`, `read`, `tap`, `type` | **Accessibility** | System Settings > Privacy > Accessibility > Terminal |
-| `screenshot` | **Screen Recording** | System Settings > Privacy > Screen Recording > Terminal |
+| `tree`, `read`, `tap`, `type`, `menu` | **Accessibility** | System Settings → Privacy & Security → Accessibility |
+| `screenshot` | **Screen Recording** | System Settings → Privacy & Security → Screen Recording |
 
-Core debugging (tree, read, tap, type, menu) only needs Accessibility — no Screen Recording needed.
+Grant permissions to **the terminal that hosts Claude Code** — Terminal.app, iTerm2, or whichever shell you run `claude` in. Core debugging (`tree`, `read`, `tap`, `type`, `menu`) only needs Accessibility; `screenshot` additionally needs Screen Recording.
+
+**After toggling a permission, you MUST fully quit (`⌘Q`) and relaunch the terminal.** macOS does not apply permission changes to already-running processes; restarting the Claude Code session alone is not enough.
+
+Quick path to the Screen Recording pane:
+```bash
+open "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
+```
+
+### The silent-redaction trap
+
+On macOS Sonoma+, when Screen Recording permission is **denied**, `screencapture` does **not error**. Instead:
+
+- `screencapture -x` (full-screen) succeeds, but your own app's windows are rendered normally while **other apps' window contents are replaced with desktop wallpaper pixels** — a privacy guarantee.
+- `screencapture -l <windowID>` fails with `could not create image from window`.
+
+The first behavior is especially nasty: a screenshot "succeeds" but shows wallpaper instead of your target app. `mac-ctl.sh screenshot` now uses `screencapture -l <winID>` as the primary path (via `find-window-id.swift`) so the failure mode is a clear error rather than a silent wallpaper image. If you see the "screencapture -l failed" warning, it's almost always this permission issue.
 
 ## Troubleshooting
 

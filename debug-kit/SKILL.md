@@ -26,16 +26,18 @@ Cross-platform app debug toolkit. One skill to build, launch, interact with, and
 
 Use `pilot.sh detect` or check project files manually:
 
-| Marker File | Platform | Reference |
-|-------------|----------|-----------|
-| `pubspec.yaml` | **Flutter** | `references/flutter.md` |
-| `package.json` + `react-native` dep | **React Native** | `references/react-native.md` |
-| `package.json` + `electron` dep | **Electron** | `references/electron.md` |
-| `package.json` (other) or `*.html` | **Web** | `references/web.md` |
-| `*.xcodeproj` / `project.yml` (iOS) | **iOS** | `references/ios.md` |
-| `*.xcodeproj` / `project.yml` (macOS) | **macOS** | `references/macos.md` |
-| `build.gradle` / `settings.gradle` | **Android** | `references/android.md` |
-| `src-tauri/tauri.conf.json` / `src-tauri/Cargo.toml` | **Tauri** | `references/tauri.md` |
+| Marker File | Platform | Reference | macOS perms† |
+|-------------|----------|-----------|:-:|
+| `pubspec.yaml` | **Flutter** | `references/flutter.md` | only for macOS target |
+| `package.json` + `react-native` dep | **React Native** | `references/react-native.md` | — |
+| `package.json` + `electron` dep | **Electron** | `references/electron.md` | — |
+| `package.json` (other) or `*.html` | **Web** | `references/web.md` | — |
+| `*.xcodeproj` / `project.yml` (iOS) | **iOS** | `references/ios.md` | — |
+| `*.xcodeproj` / `project.yml` (macOS) | **macOS** | `references/macos.md` | **required** |
+| `build.gradle` / `settings.gradle` | **Android** | `references/android.md` | — |
+| `src-tauri/tauri.conf.json` / `src-tauri/Cargo.toml` | **Tauri** | `references/tauri.md` | **required** |
+
+† **macOS perms** = Accessibility + Screen Recording on the terminal hosting Claude Code. Only the platforms that drive *native macOS windows* through `mac-ctl.sh` need these (macOS, Tauri, Flutter when targeting macOS). Every other platform reads pixels through its own protocol (CDP / simctl / adb) and needs nothing extra. See `references/macos.md` §Permissions for the setup steps and the "silent wallpaper redaction" gotcha when permission is missing.
 
 **After identifying the platform, read the corresponding `references/<platform>.md` for full command documentation.**
 

@@ -108,8 +108,10 @@ For `DEVING → DEV DONE` transitions on a Tauri project, the following evidence
 |------|-----|
 | `cargo` / `rustc` | Tauri's Rust backend |
 | `pnpm` | Frontend tooling (script assumes pnpm; adapt for npm/yarn) |
-| `jq` | JSON parsing (avoids python3 environment fragility) |
-| macOS Accessibility permission | For AX tree + CGEvent; grant Terminal/iTerm in System Settings → Privacy & Security → Accessibility |
+| `jq` | JSON parsing |
+| `swift` CLI | Used by `find-window-id.swift` for `screencapture -l <winID>` (ships with Xcode Command Line Tools; Tauri already depends on these) |
+| **macOS Accessibility permission** | For AX tree + CGEvent. System Settings → Privacy & Security → Accessibility → add your terminal (Terminal / iTerm) |
+| **macOS Screen Recording permission** | For `screenshot`. System Settings → Privacy & Security → Screen Recording → add your terminal. Then **fully quit & relaunch the terminal** (macOS requires this). See `references/macos.md` §Permissions for the shared rationale — this is the same requirement as any other `mac-ctl.sh`-based platform. |
 
 ## Limitations
 
@@ -117,7 +119,7 @@ For `DEVING → DEV DONE` transitions on a Tauri project, the following evidence
 2. **Tap is coordinate-based.** Unlike Electron/Web via CDP, you can't click by CSS selector. Use `tree` to get coordinates first, then `tap`.
 3. **Retina/HiDPI**: `mac-ctl.sh screenshot` automatically handles 2x scaling. Tap coordinates are in logical points, not physical pixels.
 4. **Windows/Linux not covered.** This script is macOS-only. On Linux the equivalent would use `at-spi2` + `xdotool`; on Windows UIA + WebView2 DevTools. Stubs welcome.
-5. **Screenshot across macOS Spaces is unreliable** *(pre-existing mac-ctl.sh limitation, surfaces prominently with Tauri dev mode)*. `mac-ctl.sh` uses `screencapture -x` + `sips` crop. If the Tauri window lives on a different macOS Space (common: user on Space A, Tauri window launched into Space B), the crop returns wallpaper pixels rather than the window contents, because `screencapture -x` only captures the active Space. AX-based commands (`tree`, `tap`, `type`) still work fine because the Accessibility API is Space-agnostic. **Workaround**: bring the Tauri window to the current Space before `screenshot` — Mission Control → drag, or `Cmd+Tab` to tauri-app. **Proper fix (future work)**: rewrite `mac-ctl.sh` screenshot to use ScreenCaptureKit (`CGWindowListCreateImage` was obsoleted in macOS 15).
+5. **Screenshot requires Screen Recording permission, no workaround.** `mac-ctl.sh screenshot` calls `screencapture -l <CGWindowID>` (window-targeted, Space-agnostic, robust). Without Screen Recording permission macOS silently redacts other apps' window content to wallpaper pixels — this is a macOS privacy guarantee that *no external tool can bypass*. `debug-kit` deliberately does not inject a Rust snapshot command into the target Tauri app (would break the zero-config promise for external debugging). `tree`, `tap`, `type`, `read` use the Accessibility API and are unaffected.
 
 ## Comparison to Other WebView-Based Platforms
 
