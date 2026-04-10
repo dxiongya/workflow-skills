@@ -98,6 +98,17 @@ _get_app_name() {
     echo "$name"
 }
 
+# Activate a running app by process name. Works for both bundled .app
+# targets and unbundled dev binaries (e.g. Tauri `cargo run`, Electron dev
+# mode). `tell application "X" to activate` fails with -1728 for processes
+# LaunchServices doesn't know about, so we go through System Events first.
+_activate() {
+    local name="$1"
+    osascript -e "tell application \"System Events\" to set frontmost of (first process whose name is \"$name\") to true" 2>/dev/null \
+        || osascript -e "tell application \"$name\" to activate" 2>/dev/null \
+        || true
+}
+
 cmd_tree() {
     local app_name
     app_name=$(_get_app_name)
@@ -265,7 +276,7 @@ PYEOF
     fi
 
     echo "Tapping at ($x, $y)..."
-    osascript -e "tell application \"$app_name\" to activate"
+    _activate "$app_name"
     sleep 0.2
 
     osascript -l JavaScript -e "
@@ -291,7 +302,7 @@ cmd_type() {
         return 1
     fi
 
-    osascript -e "tell application \"$app_name\" to activate"
+    _activate "$app_name"
     sleep 0.2
     osascript -e "tell application \"System Events\" to keystroke \"$text\"" 2>&1
     ok "Typed: $text"
@@ -308,7 +319,7 @@ cmd_key() {
         return 1
     fi
 
-    osascript -e "tell application \"$app_name\" to activate"
+    _activate "$app_name"
     sleep 0.2
 
     # Parse modifiers and key
@@ -358,7 +369,7 @@ cmd_screenshot() {
     app_name=$(_get_app_name)
 
     # Activate the app
-    osascript -e "tell application \"$app_name\" to activate"
+    _activate "$app_name"
     sleep 0.3
 
     # Method 1: Try ScreenCaptureKit via compiled helper
@@ -431,7 +442,7 @@ JSEOF
             ok "Window resized to ${w}x${h}"
             ;;
         focus)
-            osascript -e "tell application \"$app_name\" to activate"
+            _activate "$app_name"
             ok "App focused"
             ;;
     esac
@@ -523,7 +534,7 @@ JSEOF
     local menu_name="${parts[0]// /}"
     local item_name="${parts[1]// /}"
 
-    osascript -e "tell application \"$app_name\" to activate"
+    _activate "$app_name"
     sleep 0.2
     osascript -e "
         tell application \"System Events\"

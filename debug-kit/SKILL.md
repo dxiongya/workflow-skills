@@ -3,8 +3,8 @@ name: debug-kit
 description: >
   Cross-platform app debug and testing skill for Claude Code.
   Build, launch, screenshot, tap, type, inspect, and monitor applications
-  across 7 platforms: Electron, iOS, macOS, Web, Flutter, React Native, Android.
-  Auto-detects project type from package.json, pubspec.yaml, xcodeproj, build.gradle.
+  across 8 platforms: Electron, iOS, macOS, Web, Flutter, React Native, Android, Tauri.
+  Auto-detects project type from package.json, pubspec.yaml, xcodeproj, build.gradle, src-tauri/.
   TRIGGER when: user says "run the app", "test the app", "take screenshot", "tap button",
   "debug", "launch", "check if it works", "hot reload", "monitor console", "check logs",
   or is working on ANY app project and wants to build, run, test, or verify changes.
@@ -13,14 +13,14 @@ description: >
 license: MIT
 metadata:
   author: daxiongya
-  version: "1.0.0"
+  version: "1.1.0"
   type: utility
   mode: assistive
 ---
 
 # Debug Kit
 
-Cross-platform app debug toolkit. One skill to build, launch, interact with, and inspect apps across 7 platforms.
+Cross-platform app debug toolkit. One skill to build, launch, interact with, and inspect apps across 8 platforms.
 
 ## Step 1: Determine Platform
 
@@ -35,6 +35,7 @@ Use `pilot.sh detect` or check project files manually:
 | `*.xcodeproj` / `project.yml` (iOS) | **iOS** | `references/ios.md` |
 | `*.xcodeproj` / `project.yml` (macOS) | **macOS** | `references/macos.md` |
 | `build.gradle` / `settings.gradle` | **Android** | `references/android.md` |
+| `src-tauri/tauri.conf.json` / `src-tauri/Cargo.toml` | **Tauri** | `references/tauri.md` |
 
 **After identifying the platform, read the corresponding `references/<platform>.md` for full command documentation.**
 
@@ -63,6 +64,9 @@ bash $P/rn-ctl.sh <command>
 
 # Android (adb + uiautomator)
 bash $P/android-ctl.sh <command>
+
+# Tauri (delegates to mac-ctl.sh — AX API reads DOM through WKWebView)
+bash $P/tauri-ctl.sh <command>
 ```
 
 Or use the unified router: `bash $P/pilot.sh <platform> <command>` / `bash $P/pilot.sh auto <command>`
@@ -96,4 +100,5 @@ Flutter   ─── flutter-ctl.sh ──┬── ios-ctl.sh (iOS target)
                                └── mac-ctl.sh (macOS target)
 React Native ─ rn-ctl.sh ──── ios-ctl.sh (iOS interaction)
 Android   ─── android-ctl.sh (adb + uiautomator)
+Tauri     ─── tauri-ctl.sh ──── mac-ctl.sh (AX API reads DOM through WKWebView)
 ```

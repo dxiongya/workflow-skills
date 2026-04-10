@@ -6,7 +6,7 @@ Two Claude Code skills for AI-assisted software development: a cross-platform de
 
 ### debug-kit
 
-Cross-platform app debug toolkit. Build, launch, screenshot, tap, type, inspect, and monitor applications across **7 platforms**.
+Cross-platform app debug toolkit. Build, launch, screenshot, tap, type, inspect, and monitor applications across **8 platforms**.
 
 | Platform | Protocol / API | Key Capability |
 |----------|---------------|----------------|
@@ -17,6 +17,7 @@ Cross-platform app debug toolkit. Build, launch, screenshot, tap, type, inspect,
 | **Flutter** | Flutter CLI + Dart VM Service | Auto-detect device, hot reload, delegates to iOS/Web/macOS |
 | **React Native** | Metro + RN CLI / Expo | Bare RN and Expo Go support, delegates to iOS for interaction |
 | **Android** | adb + uiautomator + gradle | Emulator management, UI hierarchy dump, input simulation |
+| **Tauri** | Tauri CLI + macOS AX API | **No CDP needed** — AX API reads DOM through WKWebView as native roles; delegates to mac-ctl.sh |
 
 #### Quick Start
 
@@ -50,6 +51,7 @@ Flutter   ─── flutter-ctl.sh ──┬── ios-ctl.sh
                                └── mac-ctl.sh
 React Native ─ rn-ctl.sh ──── ios-ctl.sh
 Android   ─── android-ctl.sh (adb + uiautomator)
+Tauri     ─── tauri-ctl.sh ──── mac-ctl.sh (AX API through WKWebView)
 ```
 
 ---
@@ -131,7 +133,8 @@ workflow-skills/
 │   │   ├── web.md
 │   │   ├── flutter.md
 │   │   ├── react-native.md
-│   │   └── android.md
+│   │   ├── android.md
+│   │   └── tauri.md
 │   └── scripts/                    Executable tools
 │       ├── pilot.sh                Unified router + platform auto-detect
 │       ├── cdp-client.mjs          Zero-dep CDP client (Electron + Web)
@@ -140,7 +143,8 @@ workflow-skills/
 │       ├── web-ctl.sh              Chrome browser control
 │       ├── flutter-ctl.sh          Flutter CLI wrapper
 │       ├── rn-ctl.sh               React Native + Expo wrapper
-│       └── android-ctl.sh          Android adb wrapper
+│       ├── android-ctl.sh          Android adb wrapper
+│       └── tauri-ctl.sh            Tauri CLI + mac-ctl.sh delegate
 │
 └── team-flow/
     ├── SKILL.md                    Roles, state machine, stage overview

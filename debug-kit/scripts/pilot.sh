@@ -22,12 +22,15 @@ detect_platform() {
 
     if [[ -f "$dir/pubspec.yaml" ]]; then
         echo "flutter"
+    elif [[ -f "$dir/src-tauri/tauri.conf.json" ]] || [[ -f "$dir/src-tauri/Cargo.toml" ]]; then
+        echo "tauri"
     elif [[ -f "$dir/package.json" ]]; then
         local detected
         detected=$(node -e "
 const d=require('$dir/package.json');
 const a={...d.dependencies,...d.devDependencies};
-if('react-native' in a) console.log('react-native');
+if('@tauri-apps/api' in a || '@tauri-apps/cli' in a) console.log('tauri');
+else if('react-native' in a) console.log('react-native');
 else if('electron' in a) console.log('electron');
 else console.log('web');
 " 2>/dev/null)
@@ -79,9 +82,12 @@ route() {
         android)
             bash "$SCRIPT_DIR/android-ctl.sh" "$@"
             ;;
+        tauri)
+            bash "$SCRIPT_DIR/tauri-ctl.sh" "$@"
+            ;;
         *)
             fail "Unknown platform: $platform"
-            echo "Supported: electron, ios, macos, web, flutter, react-native, android"
+            echo "Supported: electron, ios, macos, web, flutter, react-native, android, tauri"
             return 1
             ;;
     esac
@@ -93,7 +99,7 @@ cmd_status() {
     echo "=== Debug Kit Status ==="
     echo ""
 
-    for sf in /tmp/.electron-debug-state.json /tmp/.web-debug-state.json /tmp/.flutter-debug-state.json /tmp/.rn-debug-state.json /tmp/.android-debug-state.json; do
+    for sf in /tmp/.electron-debug-state.json /tmp/.web-debug-state.json /tmp/.flutter-debug-state.json /tmp/.rn-debug-state.json /tmp/.android-debug-state.json /tmp/.tauri-debug-state.json; do
         if [[ -f "$sf" ]]; then
             local name
             name=$(basename "$sf" | sed 's/^\.\(.*\)-state\.json$/\1/' | sed 's/-debug//')
@@ -138,6 +144,7 @@ PLATFORMS:
   flutter      Flutter apps (delegates to ios/web/macos)
   react-native React Native / Expo apps (delegates to ios)
   android      Android apps (adb + uiautomator)
+  tauri        Tauri apps (delegates to macos; AX API sees DOM)
 HELP
 }
 
