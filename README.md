@@ -56,7 +56,7 @@ Android   ─── android-ctl.sh (adb + uiautomator)
 
 ### team-flow
 
-Team development workflow with **enforced state machine**. Defines roles, card lifecycle, quality gates, and strict transition rules.
+Team development workflow with **enforced state machine**. Defines roles, card lifecycle, quality gates, and strict transition rules. Cards are classified as `visual` / `behavioral` / `structural`. Every acceptance criterion must map to an executable verification action (command / file / grep / compile / test) and the **actual output must be pasted** at transition time — the strict anti-hallucination discipline for LLM-driven work. A recommended shorthand syntax (`file:` / `grep:` / `compile:` / `screenshot:` / `log:` / `test:` / `diff:`) is provided but not mandatory. Every commit must reference its `CARD-ID`.
 
 #### Roles
 
@@ -144,13 +144,17 @@ workflow-skills/
 │
 └── team-flow/
     ├── SKILL.md                    Roles, state machine, stage overview
-    └── references/
-        ├── transitions.md          State transition gates (core enforcement)
-        ├── plan.md                 Sprint planning (card creation)
-        ├── dev.md                  Dev lifecycle (开卡→执行→结卡)
-        ├── design.md               Design system + Pencil MCP + DESIGN.md
-        ├── qa.md                   QA testing guide (logic/UI/interaction/security)
-        └── integration.md          Integration testing (phase completion)
+    ├── references/
+    │   ├── transitions.md          State transition gates + evidence syntax
+    │   ├── plan.md                 Sprint planning (card creation + dependency graph)
+    │   ├── dev.md                  Dev lifecycle + Card↔Commit mapping
+    │   ├── design.md               Design system + Pencil MCP + DESIGN.md
+    │   ├── qa.md                   QA testing guide (logic/UI/interaction/security)
+    │   ├── integration.md          Integration testing (phase completion)
+    │   └── proposals.md            Proposal backlog (deferred ideas pool)
+    └── templates/
+        ├── card-template.md        New card scaffold
+        └── tasks-readme-template.md  tasks/README.md index template
 ```
 
 ## Requirements
