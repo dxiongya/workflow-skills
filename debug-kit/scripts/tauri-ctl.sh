@@ -27,8 +27,10 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 # Read productName from tauri.conf.json — that's what the dev binary and
-# the running process name are called. Tauri allows // comments in the
-# config; we strip them before feeding to jq.
+# the running process name are called. Tauri 2.x scaffolds pure JSON, so
+# we can feed it to jq directly. (Older Tauri 1.x tooling sometimes
+# emitted JSON with comments; if you hit that, pre-process with a proper
+# JSONC parser — a naive sed strips URL `//` inside strings.)
 _product_name() {
     local project_dir="$1"
     local conf="$project_dir/src-tauri/tauri.conf.json"
@@ -36,7 +38,7 @@ _product_name() {
         fail "Not a Tauri project: $conf not found"
         return 1
     fi
-    sed -E 's|//.*$||' "$conf" | jq -r '.productName // "tauri-app"'
+    jq -r '.productName // "tauri-app"' "$conf"
 }
 
 _current_app_name() {

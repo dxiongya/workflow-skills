@@ -3,6 +3,7 @@
 # Uses: Accessibility API (JXA), CGEvent (JXA), xcodebuild, screencapture
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_NAME="${MAC_APP:-}"
 GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'; NC='\033[0m'
 ok()   { echo -e "${GREEN}[OK]${NC} $*"; }
@@ -370,14 +371,34 @@ cmd_screenshot() {
 
     # Activate the app
     _activate "$app_name"
-    sleep 0.3
 
-    # Method 1: Try ScreenCaptureKit via compiled helper
+    # Method 1: window-targeted capture via `screencapture -l <winID>`.
+    # Needs the CGWindowID (not exposed via AppleScript/AX); we find it
+    # with a small Swift helper. This is the only method that works
+    # reliably across macOS Spaces and for unfocused windows.
+    local wid=""
+    if command -v swift >/dev/null 2>&1 && [[ -f "$SCRIPT_DIR/find-window-id.swift" ]]; then
+        wid=$(swift "$SCRIPT_DIR/find-window-id.swift" "$app_name" 2>/dev/null || true)
+    fi
+    if [[ -n "$wid" ]]; then
+        if screencapture -l "$wid" -x "$output" 2>/dev/null && [[ -s "$output" ]]; then
+            ok "Screenshot saved to $output (window-targeted, wid=$wid)"
+            _screenshot_resize "$output"
+            return 0
+        fi
+        # screencapture -l failed → almost always Screen Recording permission denied.
+        warn "screencapture -l failed. This is usually a Screen Recording permission issue."
+        warn "Grant it in: System Settings → Privacy & Security → Screen Recording → <your terminal / Claude Code>"
+    fi
+
+    # Method 2: compiled ScreenCaptureKit helper (if user pre-built one)
     if [[ -x /tmp/capture-window ]]; then
         /tmp/capture-window "$app_name" "$output" 2>/dev/null && return 0
     fi
 
-    # Method 2: screencapture with full screen then crop
+    # Method 3: full-screen + crop fallback (cannot cross Spaces; also
+    # produces wallpaper pixels when Screen Recording permission is
+    # denied, because macOS redacts other apps' window contents).
     local bounds
     bounds=$(osascript -e "
         tell application \"System Events\"
@@ -396,17 +417,21 @@ cmd_screenshot() {
         local px=$((wx * 2)) py=$((wy * 2)) pw=$((ww * 2)) ph=$((wh * 2))
         sips -c "$ph" "$pw" --cropOffset "$py" "$px" /tmp/_macos_full_tmp.png --out "$output" 2>/dev/null
         rm -f /tmp/_macos_full_tmp.png
-        ok "Screenshot saved to $output (cropped from full screen)"
+        warn "Screenshot saved to $output (fallback: full-screen crop — may show wallpaper if permission missing)"
     else
-        # Method 3: Just take full screen
         screencapture -x "$output" 2>/dev/null
-        ok "Screenshot saved to $output (full screen)"
+        warn "Screenshot saved to $output (fallback: full screen)"
     fi
-    # Resize to fit Claude's image dimension limit (max 1200px height)
-    local _h
-    _h=$(sips -g pixelHeight "$output" 2>/dev/null | awk '/pixelHeight/{print $2}')
-    if [[ -n "$_h" && "$_h" -gt 1200 ]]; then
-        sips --resampleHeight 1200 "$output" >/dev/null 2>&1
+    _screenshot_resize "$output"
+}
+
+# Resize to fit Claude's image dimension limit (max 1200px height)
+_screenshot_resize() {
+    local path="$1"
+    local h
+    h=$(sips -g pixelHeight "$path" 2>/dev/null | awk '/pixelHeight/{print $2}')
+    if [[ -n "$h" && "$h" -gt 1200 ]]; then
+        sips --resampleHeight 1200 "$path" >/dev/null 2>&1
     fi
 }
 
