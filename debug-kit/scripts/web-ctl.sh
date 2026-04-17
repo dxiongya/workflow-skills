@@ -185,11 +185,15 @@ cmd_cdp() {
 cmd_screenshot() {
     local output="${1:-/tmp/web-screenshot.png}"
     CDP_PORT=$PORT node "$CDP_SCRIPT" screenshot "$output"
-    # Resize to fit Claude's image dimension limit (max 1200px height)
-    local h
-    h=$(sips -g pixelHeight "$output" 2>/dev/null | awk '/pixelHeight/{print $2}')
-    if [[ -n "$h" && "$h" -gt 1200 ]]; then
-        sips --resampleHeight 1200 "$output" >/dev/null 2>&1
+    # Resize to fit Claude's image dimension limit (max 1900px either side)
+    local dims w h MAX=1900
+    dims=$(sips -g pixelWidth -g pixelHeight "$output" 2>/dev/null)
+    w=$(echo "$dims" | awk '/pixelWidth/{print $2}')
+    h=$(echo "$dims" | awk '/pixelHeight/{print $2}')
+    if [[ -n "$w" && "$w" -gt "$MAX" ]] && [[ -z "$h" || "$w" -ge "$h" ]]; then
+        sips --resampleWidth "$MAX" "$output" >/dev/null 2>&1
+    elif [[ -n "$h" && "$h" -gt "$MAX" ]]; then
+        sips --resampleHeight "$MAX" "$output" >/dev/null 2>&1
     fi
 }
 

@@ -300,12 +300,20 @@ async function cmdScreenshot(outputPath = '/tmp/electron-screenshot.png') {
   console.log('Capturing screenshot...');
   const result = await cdpCommand('Page.captureScreenshot', { format: 'png' });
   fs.writeFileSync(outputPath, Buffer.from(result.data, 'base64'));
-  // Resize to fit Claude's image dimension limit (max 1200px height)
+  // Resize to fit Claude's image dimension limit (max 1900px either side, under 2000px API limit)
   try {
     const { execSync } = await import('child_process');
-    const h = execSync(`sips -g pixelHeight "${outputPath}" 2>/dev/null | awk '/pixelHeight/{print $2}'`, { encoding: 'utf8' }).trim();
-    if (h && parseInt(h) > 1200) {
-      execSync(`sips --resampleHeight 1200 "${outputPath}" >/dev/null 2>&1`);
+    const dims = execSync(`sips -g pixelWidth -g pixelHeight "${outputPath}" 2>/dev/null`, { encoding: 'utf8' });
+    const w = parseInt((dims.match(/pixelWidth:\s*(\d+)/) || [])[1]) || 0;
+    const h = parseInt((dims.match(/pixelHeight:\s*(\d+)/) || [])[1]) || 0;
+    const MAX = 1900;
+    if (w > MAX || h > MAX) {
+      // Scale down proportionally so the largest dimension = MAX
+      if (w >= h) {
+        execSync(`sips --resampleWidth ${MAX} "${outputPath}" >/dev/null 2>&1`);
+      } else {
+        execSync(`sips --resampleHeight ${MAX} "${outputPath}" >/dev/null 2>&1`);
+      }
     }
   } catch {}
   console.log(`Screenshot saved to ${outputPath}`);

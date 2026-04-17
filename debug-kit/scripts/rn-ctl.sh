@@ -270,11 +270,15 @@ cmd_screenshot() {
     # iOS Simulator screenshot
     if xcrun simctl list devices booted 2>/dev/null | grep -q "Booted"; then
         xcrun simctl io booted screenshot "$output" 2>/dev/null
-        # Resize to fit Claude's image dimension limit (max 1200px height)
-        local h
-        h=$(sips -g pixelHeight "$output" 2>/dev/null | awk '/pixelHeight/{print $2}')
-        if [[ -n "$h" && "$h" -gt 1200 ]]; then
-            sips --resampleHeight 1200 "$output" >/dev/null 2>&1
+        # Resize to fit Claude's image dimension limit (max 1900px either side)
+        local dims w h MAX=1900
+        dims=$(sips -g pixelWidth -g pixelHeight "$output" 2>/dev/null)
+        w=$(echo "$dims" | awk '/pixelWidth/{print $2}')
+        h=$(echo "$dims" | awk '/pixelHeight/{print $2}')
+        if [[ -n "$w" && "$w" -gt "$MAX" ]] && [[ -z "$h" || "$w" -ge "$h" ]]; then
+            sips --resampleWidth "$MAX" "$output" >/dev/null 2>&1
+        elif [[ -n "$h" && "$h" -gt "$MAX" ]]; then
+            sips --resampleHeight "$MAX" "$output" >/dev/null 2>&1
         fi
         ok "Screenshot saved: $output (iOS Simulator)"
     else

@@ -3,8 +3,8 @@ name: debug-kit
 description: >
   Cross-platform app debug and testing skill for Claude Code.
   Build, launch, screenshot, tap, type, inspect, and monitor applications
-  across 8 platforms: Electron, iOS, macOS, Web, Flutter, React Native, Android, Tauri.
-  Auto-detects project type from package.json, pubspec.yaml, xcodeproj, build.gradle, src-tauri/.
+  across 9 platforms: Electron, iOS, macOS, Web, Flutter, React Native, Android, Tauri, Chrome Extension.
+  Auto-detects project type from package.json, pubspec.yaml, xcodeproj, build.gradle, src-tauri/, manifest.json (MV3).
   TRIGGER when: user says "run the app", "test the app", "take screenshot", "tap button",
   "debug", "launch", "check if it works", "hot reload", "monitor console", "check logs",
   or is working on ANY app project and wants to build, run, test, or verify changes.
@@ -20,7 +20,7 @@ metadata:
 
 # Debug Kit
 
-Cross-platform app debug toolkit. One skill to build, launch, interact with, and inspect apps across 8 platforms.
+Cross-platform app debug toolkit. One skill to build, launch, interact with, and inspect apps across 9 platforms.
 
 ## Step 1: Determine Platform
 
@@ -36,6 +36,7 @@ Use `pilot.sh detect` or check project files manually:
 | `*.xcodeproj` / `project.yml` (macOS) | **macOS** | `references/macos.md` | **required** |
 | `build.gradle` / `settings.gradle` | **Android** | `references/android.md` | — |
 | `src-tauri/tauri.conf.json` / `src-tauri/Cargo.toml` | **Tauri** | `references/tauri.md` | **required** |
+| `manifest.json` (manifest_version: 3) + `wxt.config.*` | **Chrome Extension** | `references/chrome-extension.md` | — |
 
 † **macOS perms** = Accessibility + Screen Recording on the terminal hosting Claude Code. Only the platforms that drive *native macOS windows* through `mac-ctl.sh` need these (macOS, Tauri, Flutter when targeting macOS). Every other platform reads pixels through its own protocol (CDP / simctl / adb) and needs nothing extra. See `references/macos.md` §Permissions for the setup steps and the "silent wallpaper redaction" gotcha when permission is missing.
 
@@ -66,6 +67,9 @@ bash $P/rn-ctl.sh <command>
 
 # Android (adb + uiautomator)
 bash $P/android-ctl.sh <command>
+
+# Chrome Extension (web-ext + CDP)
+# See references/chrome-extension.md
 
 # Tauri (delegates to mac-ctl.sh — AX API reads DOM through WKWebView)
 bash $P/tauri-ctl.sh <command>

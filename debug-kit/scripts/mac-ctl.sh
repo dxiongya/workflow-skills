@@ -427,11 +427,15 @@ cmd_screenshot() {
 
 # Resize to fit Claude's image dimension limit (max 1200px height)
 _screenshot_resize() {
-    local path="$1"
-    local h
-    h=$(sips -g pixelHeight "$path" 2>/dev/null | awk '/pixelHeight/{print $2}')
-    if [[ -n "$h" && "$h" -gt 1200 ]]; then
-        sips --resampleHeight 1200 "$path" >/dev/null 2>&1
+    local path="$1" MAX=1900
+    local dims w h
+    dims=$(sips -g pixelWidth -g pixelHeight "$path" 2>/dev/null)
+    w=$(echo "$dims" | awk '/pixelWidth/{print $2}')
+    h=$(echo "$dims" | awk '/pixelHeight/{print $2}')
+    if [[ -n "$w" && "$w" -gt "$MAX" ]] && [[ -z "$h" || "$w" -ge "$h" ]]; then
+        sips --resampleWidth "$MAX" "$path" >/dev/null 2>&1
+    elif [[ -n "$h" && "$h" -gt "$MAX" ]]; then
+        sips --resampleHeight "$MAX" "$path" >/dev/null 2>&1
     fi
 }
 
